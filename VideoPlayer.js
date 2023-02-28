@@ -31,8 +31,6 @@ export default class VideoPlayer extends Component {
     volume: 1,
     title: '',
     rate: 1,
-    showTimeRemaining: true,
-    showHours: false,
   };
 
   constructor(props) {
@@ -53,8 +51,7 @@ export default class VideoPlayer extends Component {
 
       isFullscreen:
         this.props.isFullScreen || this.props.resizeMode === 'cover' || false,
-      showTimeRemaining: this.props.showTimeRemaining,
-      showHours: this.props.showHours,
+      showTimeRemaining: true,
       volumeTrackWidth: 0,
       volumeFillWidth: 0,
       seekerFillWidth: 0,
@@ -89,6 +86,8 @@ export default class VideoPlayer extends Component {
       onError: this.props.onError || this._onError.bind(this),
       onBack: this.props.onBack || this._onBack.bind(this),
       onEnd: this.props.onEnd || this._onEnd.bind(this),
+      onPrev: this.props.onPrev, 
+      onNext: this.props.onNext, 
       onScreenTouch: this._onScreenTouch.bind(this),
       onEnterFullscreen: this.props.onEnterFullscreen,
       onExitFullscreen: this.props.onExitFullscreen,
@@ -141,6 +140,9 @@ export default class VideoPlayer extends Component {
       },
       topControl: {
         marginTop: new Animated.Value(0),
+        opacity: new Animated.Value(initialValue),
+      },
+      centeral:{
         opacity: new Animated.Value(initialValue),
       },
       video: {
@@ -272,6 +274,8 @@ export default class VideoPlayer extends Component {
    * new page.
    */
   _onEnd() {}
+  _onPrev() {}
+  _onNext() {}
 
   /**
    * Set the error state to true which then
@@ -371,6 +375,13 @@ export default class VideoPlayer extends Component {
         duration: this.props.controlAnimationTiming,
         useNativeDriver: false,
       }),
+
+      Animated.timing(this.animations.centeral.opacity, {
+        toValue: 0,
+        duration: this.props.controlAnimationTiming,
+        useNativeDriver: false,
+      }),
+
       Animated.timing(this.animations.bottomControl.opacity, {
         toValue: 0,
         duration: this.props.controlAnimationTiming,
@@ -398,6 +409,11 @@ export default class VideoPlayer extends Component {
       }),
       Animated.timing(this.animations.topControl.marginTop, {
         toValue: 0,
+        useNativeDriver: false,
+        duration: this.props.controlAnimationTiming,
+      }),
+      Animated.timing(this.animations.centeral.opacity, {
+        toValue: 1,
         useNativeDriver: false,
         duration: this.props.controlAnimationTiming,
       }),
@@ -565,22 +581,10 @@ export default class VideoPlayer extends Component {
     const symbol = this.state.showRemainingTime ? '-' : '';
     time = Math.min(Math.max(time, 0), this.state.duration);
 
-    if (!this.state.showHours) {
-      const formattedMinutes = padStart(Math.floor(time / 60).toFixed(0), 2, 0);
-      const formattedSeconds = padStart(Math.floor(time % 60).toFixed(0), 2, 0);
-
-      return `${symbol}${formattedMinutes}:${formattedSeconds}`;
-    }
-
-    const formattedHours = padStart(Math.floor(time / 3600).toFixed(0), 2, 0);
-    const formattedMinutes = padStart(
-      (Math.floor(time / 60) % 60).toFixed(0),
-      2,
-      0,
-    );
+    const formattedMinutes = padStart(Math.floor(time / 60).toFixed(0), 2, 0);
     const formattedSeconds = padStart(Math.floor(time % 60).toFixed(0), 2, 0);
 
-    return `${symbol}${formattedHours}:${formattedMinutes}:${formattedSeconds}`;
+    return `${symbol}${formattedMinutes}:${formattedSeconds}`;
   }
 
   /**
@@ -944,6 +948,30 @@ export default class VideoPlayer extends Component {
     return <View style={[styles.controls.control]} />;
   }
 
+  renderCenterControls() {
+    const prevControl = this.renderPrev()
+    const nextControl = this.renderNext()
+    const playPauseControl = this.renderPlayPause();
+
+    return (
+      <Animated.View
+        style={[
+          styles.controls.center,
+          {
+            opacity: this.animations.centeral.opacity,
+          },
+        ]}>
+        
+            <View style={styles.controls.pullCenter}>
+              {prevControl}
+              {playPauseControl}
+              {nextControl}
+            </View>
+        
+      </Animated.View>
+    );
+  }
+
   /**
    * Groups the top bar controls together in an animated
    * view and spaces them out.
@@ -955,9 +983,8 @@ export default class VideoPlayer extends Component {
     const volumeControl = this.props.disableVolume
       ? this.renderNullControl()
       : this.renderVolume();
-    const fullscreenControl = this.props.disableFullscreen
-      ? this.renderNullControl()
-      : this.renderFullscreen();
+    const fullscreenControl = this.renderNullControl()
+      
 
     return (
       <Animated.View
@@ -994,6 +1021,44 @@ export default class VideoPlayer extends Component {
         style={styles.controls.back}
       />,
       this.events.onBack,
+      styles.controls.back,
+    );
+  }
+
+
+  /**
+   * Render the play/pause button and show the respective icon
+   */
+  renderPlayPause() {
+      let source =
+        this.state.paused === true
+          ? require('./assets/img/play.png')
+          : require('./assets/img/pause.png');
+      return this.renderControl(
+        <Image source={source} />,
+        this.methods.togglePlayPause,
+        styles.controls.playPause,
+      );
+    }
+
+  renderPrev() {
+    return this.renderControl(
+      <Image
+        source={require('./assets/img/prev.png')}
+        style={styles.controls.back}
+      />,
+      this.props.onPrev,
+      styles.controls.back,
+    );
+  }
+
+  renderNext() {
+    return this.renderControl(
+      <Image
+        source={require('./assets/img/next.png')}
+        style={styles.controls.back}
+      />,
+      this.props.onNext,
       styles.controls.back,
     );
   }
@@ -1037,6 +1102,8 @@ export default class VideoPlayer extends Component {
     );
   }
 
+
+
   /**
    * Render bottom control group and wrap it in a holder
    */
@@ -1047,9 +1114,7 @@ export default class VideoPlayer extends Component {
     const seekbarControl = this.props.disableSeekbar
       ? this.renderNullControl()
       : this.renderSeekbar();
-    const playPauseControl = this.props.disablePlayPause
-      ? this.renderNullControl()
-      : this.renderPlayPause();
+   
 
     return (
       <Animated.View
@@ -1067,11 +1132,12 @@ export default class VideoPlayer extends Component {
           {seekbarControl}
           <SafeAreaView
             style={[styles.controls.row, styles.controls.bottomControlGroup]}>
-            {playPauseControl}
+            
             {this.renderTitle()}
             {timerControl}
           </SafeAreaView>
         </ImageBackground>
+        
       </Animated.View>
     );
   }
@@ -1117,20 +1183,7 @@ export default class VideoPlayer extends Component {
     );
   }
 
-  /**
-   * Render the play/pause button and show the respective icon
-   */
-  renderPlayPause() {
-    let source =
-      this.state.paused === true
-        ? require('./assets/img/play.png')
-        : require('./assets/img/pause.png');
-    return this.renderControl(
-      <Image source={source} />,
-      this.methods.togglePlayPause,
-      styles.controls.playPause,
-    );
-  }
+
 
   /**
    * Render our title...if supplied.
@@ -1235,6 +1288,7 @@ export default class VideoPlayer extends Component {
           {this.renderError()}
           {this.renderLoader()}
           {this.renderTopControls()}
+          {this.renderCenterControls()}
           {this.renderBottomControls()}
         </View>
       </TouchableWithoutFeedback>
@@ -1327,10 +1381,19 @@ const styles = {
       alignItems: 'center',
       justifyContent: 'center',
     },
+    pullCenter: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginTop:150,
+      justifyContent: 'space-evenly',
+    },
     top: {
       flex: 1,
       alignItems: 'stretch',
       justifyContent: 'flex-start',
+    },
+    center:{
+      justifyContent:'space-between',
     },
     bottom: {
       alignItems: 'stretch',
