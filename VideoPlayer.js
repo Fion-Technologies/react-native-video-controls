@@ -12,8 +12,11 @@ import {
   Image,
   View,
   Text,
+  Dimensions,
+  ActivityIndicator
 } from 'react-native';
 import padStart from 'lodash/padStart';
+import { alignItems } from 'styled-system';
 
 export default class VideoPlayer extends Component {
   static defaultProps = {
@@ -63,7 +66,7 @@ export default class VideoPlayer extends Component {
       seeking: false,
       originallyPaused: false,
       scrubbing: false,
-      loading: false,
+      loading: true,
       currentTime: 0,
       error: false,
       duration: 0,
@@ -961,7 +964,6 @@ export default class VideoPlayer extends Component {
             opacity: this.animations.centeral.opacity,
           },
         ]}>
-        
             <View style={styles.controls.pullCenter}>
               {prevControl}
               {playPauseControl}
@@ -987,27 +989,22 @@ export default class VideoPlayer extends Component {
       
 
     return (
+      <SafeAreaView style={[styles.controls.pullTop ]}>
       <Animated.View
         style={[
-          styles.controls.top,
           {
             opacity: this.animations.topControl.opacity,
-            marginTop: this.animations.topControl.marginTop,
           },
+          {marginTop:20,flexDirection:'row',  justifyContent:'space-between',marginHorizontal:20}
         ]}>
-        <ImageBackground
-          source={require('./assets/img/top-vignette.png')}
-          style={[styles.controls.column]}
-          imageStyle={[styles.controls.vignette]}>
-          <SafeAreaView style={styles.controls.topControlGroup}>
+     
             {backControl}
-            <View style={styles.controls.pullRight}>
+             <View style={styles.controls.pullRight}>
               {volumeControl}
-              {fullscreenControl}
-            </View>
-          </SafeAreaView>
-        </ImageBackground>
+              </View>
+              
       </Animated.View>
+      </SafeAreaView>
     );
   }
 
@@ -1045,10 +1042,10 @@ export default class VideoPlayer extends Component {
     return this.renderControl(
       <Image
         source={require('./assets/img/prev.png')}
-        style={styles.controls.back}
+        style={styles.controls.prev}
       />,
       this.props.onPrev,
-      styles.controls.back,
+      styles.controls.prev,
     );
   }
 
@@ -1056,10 +1053,10 @@ export default class VideoPlayer extends Component {
     return this.renderControl(
       <Image
         source={require('./assets/img/next.png')}
-        style={styles.controls.back}
+        style={styles.controls.next}
       />,
       this.props.onNext,
-      styles.controls.back,
+      styles.controls.next,
     );
   }
 
@@ -1219,29 +1216,22 @@ export default class VideoPlayer extends Component {
    * Show loading icon
    */
   renderLoader() {
-    if (this.state.loading) {
+    
       return (
         <View style={styles.loader.container}>
-          <Animated.Image
-            source={require('./assets/img/loader-icon.png')}
-            style={[
+          <ActivityIndicator size={'large'} color='white' style={[
               styles.loader.icon,
               {
                 transform: [
-                  {
-                    rotate: this.animations.loader.rotate.interpolate({
-                      inputRange: [0, 360],
-                      outputRange: ['0deg', '360deg'],
-                    }),
-                  },
+                  
+                  { scaleX: 2 },
+                   { scaleY: 2 }
                 ],
               },
-            ]}
-          />
+            ]} />
+          
         </View>
-      );
-    }
-    return null;
+      )
   }
 
   renderError() {
@@ -1274,6 +1264,11 @@ export default class VideoPlayer extends Component {
             resizeMode={this.state.resizeMode}
             volume={this.state.volume}
             paused={this.state.paused}
+            onBuffer={({isBuffering})=>{
+              this.setState({
+                loading: isBuffering
+              })
+            }}
             muted={this.state.muted}
             rate={this.state.rate}
             onLoadStart={this.events.onLoadStart}
@@ -1286,9 +1281,8 @@ export default class VideoPlayer extends Component {
             source={this.props.source}
           />
           {this.renderError()}
-          {this.renderLoader()}
           {this.renderTopControls()}
-          {this.renderCenterControls()}
+          {this.state.loading ? this.renderLoader():  this.renderCenterControls()}
           {this.renderBottomControls()}
         </View>
       </TouchableWithoutFeedback>
@@ -1379,21 +1373,20 @@ const styles = {
     pullRight: {
       flexDirection: 'row',
       alignItems: 'center',
-      justifyContent: 'center',
+    },
+    pullTop: {
+
     },
     pullCenter: {
       flexDirection: 'row',
       alignItems: 'center',
-      marginTop:150,
-      justifyContent: 'space-evenly',
+      marginTop:250,
+      justifyContent:'space-evenly'
     },
     top: {
       flex: 1,
       alignItems: 'stretch',
       justifyContent: 'flex-start',
-    },
-    center:{
-      justifyContent:'space-between',
     },
     bottom: {
       alignItems: 'stretch',
@@ -1424,8 +1417,27 @@ const styles = {
       flexDirection: 'row',
     },
     playPause: {
-      position: 'relative',
-      width: 80,
+      justifyContent:'center',
+      alignItems:'center',
+      width: 95,
+      zIndex: 0,
+    },
+    next: {
+      justifyContent:'center',
+      alignItems:'center',
+      width: 43,
+      zIndex: 0,
+    },
+    prev: {
+      justifyContent:'center',
+      alignItems:'center',
+      width: 43,
+      zIndex: 0,
+    },
+    back:{
+      justifyContent:'center',
+      alignItems:'center',
+      width: 33,
       zIndex: 0,
     },
     title: {
