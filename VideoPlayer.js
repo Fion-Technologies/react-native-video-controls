@@ -995,7 +995,7 @@ export default class VideoPlayer extends Component {
           {
             opacity: this.animations.topControl.opacity,
           },
-          {marginTop:20,flexDirection:'row',  justifyContent:'space-between',marginHorizontal:20}
+          {flexDirection:'row',  justifyContent:'space-between',marginHorizontal:20}
         ]}>
      
             {backControl}
@@ -1269,6 +1269,7 @@ export default class VideoPlayer extends Component {
                 loading: isBuffering
               })
             }}
+            ignoreSilentSwitch="ignore"
             muted={this.state.muted}
             rate={this.state.rate}
             onLoadStart={this.events.onLoadStart}
